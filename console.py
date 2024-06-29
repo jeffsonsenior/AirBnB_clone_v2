@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!usr/bin/python3
 """ Console Module """
 import cmd
 import sys
@@ -242,7 +242,7 @@ class HBNBCommand(cmd.Cmd):
         print("Shows all objects, or all of a class")
         print("[Usage]: all <className>\n")
 
-def do_count(self, args):
+    def do_count(self, args):
         """Count current number of class instances"""
         count = 0
         for k, v in storage._FileStorage__objects.items():
@@ -251,7 +251,7 @@ def do_count(self, args):
         print(count)
 
     def help_count(self):
-        """ """
+        """Print"""
         print("Usage: count <class_name>")
 
     def do_update(self, args):
