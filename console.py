@@ -113,46 +113,45 @@ class HBNBCommand(cmd.Cmd):
         """ Overrides the emptyline method of CMD """
         pass
 
-    def do_create(self, arg):
-        """
-        Create a new instance of BaseModel and save it to the JSON file.
-        Usage: create <class_name>
-        """
-        try:
-            class_name = arg.split(" ")[0]
-            if len(class_name) == 0:
-                print("** class name missing **")
-                return
-            if class_name and class_name not in self.valid_classes:
-                print("** class doesn't exist **")
-                return
-
-            kwargs = {}
-            commands = arg.split(" ")
-            for i in range(1, len(commands)):
-                
-                key = commands[i].split("=")[0]
-                value = commands[i].split("=")[1]
-                #key, value = tuple(commands[i].split("="))
-                if value.startswith('"'):
-                    value = value.strip('"').replace("_", " ")
-                else:
-                    try:
-                        value = eval(value)
-                    except (SyntaxError, NameError):
-                        continue
-                kwargs[key] = value
-
-            if kwargs == {}:
-                new_instance = eval(class_name)()
-            else:
-                new_instance = eval(class_name)(**kwargs)
-            storage.new(new_instance)
-            print(new_instance.id)
-            storage.save()
-        except ValueError:
-            print(ValueError)
+    def do_create(self, args):
+        """ Create an object of any class"""
+        if not args:
+            print("** class name missing **")
             return
+        arg_lis = args.split()
+        if arg_lis[0] not in HBNBCommand.classes:
+            print("** class doesn't exist **")
+            return
+        key_lis = []
+        if len(arg_lis) > 1:
+            for arg in arg_lis[1:]:
+                values = arg.split('=', 1)
+                try:
+                    if values[1][0] == '"' and values[1][-1] == '"':
+                        out = [values[0], ' '.join(values[1][1:-1].split('_'))]
+                        key_lis.append(out)
+                        continue
+                    try:
+                        num = float(values[1])
+                        if '.' not in values[1]:
+                            num = int(values[1])
+                        out = [values[0], num]
+                        key_lis.append(out)
+                    except ValueError:
+                        continue
+                except IndexError:
+                    continue
+        new_instance = HBNBCommand.classes[arg_lis[0]]()
+        for opt in key_lis:
+            setattr(new_instance, opt[0], opt[1])
+        storage.new(new_instance)
+        print(new_instance.id)
+        storage.save()
+
+    def help_create(self):
+        """ Help information for the create method """
+        print("Creates a class of any type")
+        print("[Usage]: create <className>\n")
 
     def do_show(self, args):
         """ Method to show an individual object """
@@ -229,11 +228,11 @@ class HBNBCommand(cmd.Cmd):
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all(args).items():
                 if k.split('.')[0] == args:
                     print_list.append(str(v))
         else:
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all().items():
                 print_list.append(str(v))
 
         print(print_list)
@@ -243,19 +242,7 @@ class HBNBCommand(cmd.Cmd):
         print("Shows all objects, or all of a class")
         print("[Usage]: all <className>\n")
 
-    def do_count(self, args):
-        """Count current number of class instances"""
-        count = 0
-        for k, v in storage._FileStorage__objects.items():
-            if args == k.split('.')[0]:
-
-    def do_count(self, args):
-        """Count current number of class instances"""
-        count = 0
-        for k, v in storage._FileStorage__objects.items():
-            if args == k.split('.')[0]:
-
-    def do_count(self, args):
+def do_count(self, args):
         """Count current number of class instances"""
         count = 0
         for k, v in storage._FileStorage__objects.items():
@@ -344,4 +331,17 @@ class HBNBCommand(cmd.Cmd):
                 # type cast as necessary
                 if att_name in HBNBCommand.types:
                     att_val = HBNBCommand.types[att_name](att_val)
+               
+                # update dictionary with name, value pair
+                new_dict.__dict__.update({att_name: att_val})
 
+        new_dict.save()  # save updates to file
+
+    def help_update(self):
+        """ Help information for the update class """
+        print("Updates an object with new information")
+        print("Usage: update <className> <id> <attName> <attVal>\n")
+
+
+if __name__ == "__main__":
+    HBNBCommand().cmdloop()
